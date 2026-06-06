@@ -1,4 +1,3 @@
-```markdown
 # 🔒 On-device Personalized LLM Fine-tuning Platform
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
@@ -39,14 +38,12 @@ In today's data-driven world, **privacy is not a luxury—it's a necessity**. Th
 
 ### Real-World Applications
 
-```mermaid
 graph LR
     A[Healthcare] -->|Patient Records| B[On-device LLM]
     C[Finance] -->|Transaction Data| B
     D[Education] -->|Student Work| B
     E[Enterprise] -->|Internal Docs| B
     B --> F[Privacy-Preserving AI]
-```
 
 ## ✨ Unique Features
 
@@ -107,7 +104,6 @@ graph LR
 
 ### Data Flow (Privacy-Preserving)
 
-```mermaid
 sequenceDiagram
     participant User
     participant Device
@@ -119,4 +115,3 @@ sequenceDiagram
     Note over FL_Server: Aggregate without seeing raw data
     FL_Server->>Device: Send improved global model
     Device->>User: Personalized model ready
-```
