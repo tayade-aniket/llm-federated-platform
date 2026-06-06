@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>On-device LLM Fine-tuning Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Privacy-First LLM Fine-tuning</h1>
+        <p>Your data never leaves your device</p>
+        
+        <div class="card">
+            <h2>📤 Upload Your Data</h2>
+            <input type="file" id="dataFile" accept=".json">
+            <button onclick="uploadData()">Upload & Start Session</button>
+            <div id="sessionId"></div>
+        </div>
+        
+        <div class="card">
+            <h2>🏋️ Start Training</h2>
+            <button onclick="startTraining()" id="trainBtn" disabled>Train on Device</button>
+            <div id="trainingStatus"></div>
+            <div class="progress-bar" id="progressBar" style="display:none;">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>💬 Test Your Model</h2>
+            <textarea id="prompt" placeholder="Enter your prompt..."></textarea>
+            <button onclick="generate()">Generate Response</button>
+            <div id="response"></div>
+        </div>
+        
+        <div class="stats">
+            <h3>Privacy Stats</h3>
+            <p>🔒 Data uploaded: <span id="dataSize">0</span> KB</p>
+            <p>🏠 Local training: Active</p>
+            <p>☁️ Cloud data: 0 KB (Never leaves device)</p>
+        </div>
+    </div>
+    
+    <script src="/static/script.js"></script>
+</body>
+</html>

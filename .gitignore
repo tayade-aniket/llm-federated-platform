@@ -1,0 +1,95 @@
+# Python virtual environment
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+
+# Model files (large files - never commit)
+models/*.bin
+models/*.pth
+models/*.pt
+models/*.safetensors
+models/*.pkl
+models/checkpoints/
+models/global_model/
+models/cache/
+!models/.gitkeep
+
+# Downloaded model cache (can be 2-5GB)
+.cache/
+huggingface_cache/
+*.lock
+
+# Trained adapters (user-specific, can be large)
+adapters/*/
+!adapters/.gitkeep
+!adapters/registry.json
+adapters/latest/
+
+# User data (privacy - NEVER commit)
+data/*.json
+data/*.jsonl
+data/*.csv
+!data/.gitkeep
+!data/sample_template.json
+
+# Environment variables (contains secrets)
+.env
+.env.local
+.env.*.local
+*.secret
+*.key
+*.pem
+credentials.json
+service-account.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Log files
+*.log
+logs/
+error_logs/
+
+# Training artifacts
+checkpoints/
+temp_*/
+tmp_*/
+*.tmp
+*.temp
+
+# Server round checkpoints (can accumulate)
+models/checkpoints/round_*.pkl
+models/checkpoints/round_*.npy
+
+# Metrics files (can be regenerated)
+models/metrics/*.json
+!models/metrics/.gitkeep
+
+# Flask/FastAPI session files
+instance/
+.webassets-cache
+
+# Jupyter notebooks (if any)
+.ipynb_checkpoints/
+*.ipynb
+
+# Docker (local overrides)
+docker-compose.override.yml
+*.pid
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# OS files
+Thumbs.db
+desktop.ini
+.DS_Store

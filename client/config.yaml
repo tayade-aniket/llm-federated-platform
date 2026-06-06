@@ -1,0 +1,24 @@
+model:
+  name: "microsoft/phi-2"  # Smaller than Phi-3 Mini (2.7B vs 3.8B)
+  use_quantization: true
+  load_in_8bit: false  # Use 4-bit for lower memory
+  load_in_4bit: true
+
+training:
+  lora_r: 8
+  lora_alpha: 16
+  lora_dropout: 0.1
+  target_modules: ["q_proj", "v_proj"]
+  batch_size: 1  # Tiny batch for memory
+  learning_rate: 3e-4
+  num_epochs: 3
+  max_seq_length: 512
+
+federated:
+  server_address: "localhost:8080"
+  client_id: "user_001"
+  min_examples: 10  # Minimum samples for training
+
+data:
+  local_data_path: "./data/user_data.json"
+  cache_path: "./models/cache"
