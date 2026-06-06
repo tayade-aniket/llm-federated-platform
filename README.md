@@ -37,13 +37,14 @@ In today's data-driven world, **privacy is not a luxury—it's a necessity**. Th
 | **Customization** | One-size-fits-all models | Personalized per user |
 
 ### Real-World Applications
-
+```mermaid
 graph LR
     A[Healthcare] -->|Patient Records| B[On-device LLM]
     C[Finance] -->|Transaction Data| B
     D[Education] -->|Student Work| B
     E[Enterprise] -->|Internal Docs| B
     B --> F[Privacy-Preserving AI]
+```
 
 ## ✨ Unique Features
 
