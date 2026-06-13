@@ -6,7 +6,7 @@ Coordinates distributed training across multiple clients
 
 import flwr as fl
 import numpy as np
-from typing import List, Tuple, Dict, Optional, Any, Callable
+from typing import List, Tuple, Dict, Optional, Any, Callable, Union
 from flwr.common import (
     Parameters, 
     Scalar, 

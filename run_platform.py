@@ -1,11 +1,16 @@
-# run_platform.py (place in root directory)
+# run_platform.py
 """
-Main orchestration script for LLM Federated Learning Platform
+Main orchestration script for LLM Federated Learning Platform.
+Starts the server, web UI, and auto-connecting federated client.
 """
+
+import os
+os.environ["USE_TF"] = "0"
+os.environ["USE_JAX"] = "0"
+os.environ["USE_TORCH"] = "1"
 
 import subprocess
 import sys
-import os
 import time
 import threading
 import argparse
@@ -31,16 +36,18 @@ def setup_complete_project():
         if not init_path.exists():
             init_path.write_text("# Auto-generated __init__.py\n")
     
-    print("✅ Project structure created")
+    print("✅ Project structure verified")
     
     # Create sample data
-    if not (PROJECT_ROOT / 'data' / 'user_data.json').exists():
+    data_path = PROJECT_ROOT / 'data' / 'user_data.json'
+    if not data_path.exists():
+        print("🎲 Generating synthetic sample dataset...")
         from utils.generate_sample_data import DataGenerator
         generator = DataGenerator()
         dataset = generator.generate_general_dataset(20)
-        generator.save_dataset(dataset, str(PROJECT_ROOT / 'data' / 'user_data.json'))
+        generator.save_dataset(dataset, str(data_path))
     
-    print("✅ Sample data generated")
+    print("✅ Sample data verified")
 
 def run_server():
     """Start federated learning server"""
@@ -50,35 +57,33 @@ def run_server():
         return
     
     print("\n🚀 Starting Federated Learning Server...")
-    subprocess.run([sys.executable, str(server_path)])
+    subprocess.run([sys.executable, str(server_path)], cwd=str(PROJECT_ROOT))
 
 def run_web_ui():
     """Start web interface"""
-    print("\n🌐 Starting Web UI at http://localhost:8000")
+    print("\n🌐 Starting Web UI at http://127.0.0.1:8000")
     subprocess.run([
         sys.executable, "-m", "uvicorn",
         "web.app:app",
         "--host", "127.0.0.1",
-        "--port", "8000",
-        "--reload"
+        "--port", "8000"
     ], cwd=str(PROJECT_ROOT))
 
-def run_client():
-    """Run as client (local training)"""
-    try:
-        from client.local_trainer import LocalTrainer
-        
-        data_path = PROJECT_ROOT / 'data' / 'user_data.json'
-        if not data_path.exists():
-            print("❌ No data found. Run setup first.")
-            return
-        
-        print("\n🏋️ Starting Local Training...")
-        trainer = LocalTrainer(str(PROJECT_ROOT / 'client' / 'config.yaml'))
-        trainer.train(str(data_path))
-        
-    except Exception as e:
-        print(f"❌ Training failed: {e}")
+def run_client_node():
+    """Run federated learning client process"""
+    client_path = PROJECT_ROOT / 'client' / 'flower_client.py'
+    if not client_path.exists():
+        print(f"❌ Client file not found: {client_path}")
+        return
+    
+    # Wait for server to boot up
+    time.sleep(5)
+    print("\n🤖 Starting Federated Learning Client connection...")
+    subprocess.run([
+        sys.executable, "-m", "client.flower_client",
+        "--config", str(PROJECT_ROOT / 'client' / 'config.yaml'),
+        "--data", str(PROJECT_ROOT / 'data' / 'user_data.json')
+    ], cwd=str(PROJECT_ROOT))
 
 def main():
     parser = argparse.ArgumentParser(description='LLM Federated Learning Platform')
@@ -87,40 +92,43 @@ def main():
     
     args = parser.parse_args()
     
-    print("=" * 50)
-    print("🤖 On-device LLM Fine-tuning Platform")
-    print("=" * 50)
+    print("=" * 60)
+    print("🤖 On-device LLM Fine-tuning & Federated Learning Platform")
+    print("=" * 60)
+    
+    setup_complete_project()
     
     if args.mode == 'setup':
-        setup_complete_project()
+        print("✅ Project setup completed successfully")
     elif args.mode == 'server':
         run_server()
     elif args.mode == 'web':
         run_web_ui()
     elif args.mode == 'client':
-        setup_complete_project()
-        run_client()
+        run_client_node()
     elif args.mode == 'all':
-        setup_complete_project()
-        
-        print("\n🔄 Starting all components...")
+        print("\n🔄 Starting all components in parallel...")
         print("   - Federated Server (port 8080)")
         print("   - Web UI (port 8000)")
-        print("\n⚠️ Press Ctrl+C to stop all\n")
+        print("   - Federated Client (auto-connecting in 5 seconds)")
+        print("\n⚠️ Press Ctrl+C to stop all components\n")
         
-        # Run server and web UI in parallel
+        # Run server, web UI, and client in threads
         server_thread = threading.Thread(target=run_server, daemon=True)
         web_thread = threading.Thread(target=run_web_ui, daemon=True)
+        client_thread = threading.Thread(target=run_client_node, daemon=True)
         
         server_thread.start()
         time.sleep(2)
         web_thread.start()
+        time.sleep(1)
+        client_thread.start()
         
         try:
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            print("\n\n🛑 Shutting down...")
+            print("\n\n🛑 Shutting down all platform services...")
             sys.exit(0)
 
 if __name__ == "__main__":

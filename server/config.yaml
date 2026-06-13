@@ -1,0 +1,16 @@
+server:
+  host: "127.0.0.1"
+  port: 8080
+  num_rounds: 3
+  min_fit_clients: 1
+  min_available_clients: 1
+
+aggregation:
+  strategy: "fedavg"
+  fraction_fit: 1.0
+  server_learning_rate: 1.0
+
+privacy:
+  differential_privacy: false
+  clip_norm: 1.0
+  noise_multiplier: 1.0
