@@ -1,22 +1,21 @@
 model:
-  # Standard CPU-friendly model for testing: "gpt2" (124M params)
-  # High-performance model: "microsoft/phi-2" (2.7B params, requires GPU or high RAM)
-  name: "gpt2"
-  use_quantization: false  # Set to true only if running on GPU with bitsandbytes
+  # Micro CPU-friendly model for 4GB RAM: "sshleifer/tiny-gpt2" (2.5M params)
+  # Standard CPU-friendly model: "gpt2" (124M params, needs 8GB+ RAM)
+  name: "sshleifer/tiny-gpt2"
+  use_quantization: false
   load_in_8bit: false
   load_in_4bit: false
 
 training:
-  # For gpt2 use ["c_attn"]
-  # For phi-2 use ["q_proj", "v_proj"]
-  lora_r: 8
-  lora_alpha: 16
+  # For gpt2 / tiny-gpt2 use ["c_attn"]
+  lora_r: 4
+  lora_alpha: 8
   lora_dropout: 0.1
   target_modules: ["c_attn"]
-  batch_size: 1  # Tiny batch for memory
-  learning_rate: 3e-4
-  num_epochs: 1  # Standard 1 epoch for quick federated rounds
-  max_seq_length: 64
+  batch_size: 1
+  learning_rate: 1e-3
+  num_epochs: 1
+  max_seq_length: 32
 
 federated:
   server_address: "127.0.0.1:8080"

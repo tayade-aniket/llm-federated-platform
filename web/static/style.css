@@ -584,7 +584,7 @@ body::after {
     font-family: 'Courier New', Courier, monospace;
 }
 
-..placeholder-text {
+.placeholder-text {
     color: var(--text-muted);
     font-style: italic;
     font-family: var(--font-sans);

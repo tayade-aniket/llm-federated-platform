@@ -44,7 +44,7 @@ def setup_complete_project():
         print("🎲 Generating synthetic sample dataset...")
         from utils.generate_sample_data import DataGenerator
         generator = DataGenerator()
-        dataset = generator.generate_general_dataset(20)
+        dataset = generator.generate_general_dataset(5)
         generator.save_dataset(dataset, str(data_path))
     
     print("✅ Sample data verified")
