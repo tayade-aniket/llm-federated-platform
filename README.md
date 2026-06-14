@@ -429,7 +429,7 @@ If this project helped you, please give it a ⭐ on GitHub!
 
 </div>
 
-## Important Additional Sections to Include
+## Important Additional Sections
 
 ## 🔐 Security Best Practices
 
@@ -485,8 +485,6 @@ After building this project, you'll master:
    - Environment management
    - CI/CD pipelines
 
-
-### 📊 Sample Dataset Formats
 
 ## 📊 Dataset Formats
 
