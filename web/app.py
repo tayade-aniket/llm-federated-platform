@@ -97,9 +97,109 @@ def run_training_task(session_id: str, data_path: str):
         sessions[session_id]["error"] = str(e)
         print(f"Background worker: Training failed for session {session_id}: {e}")
 
+# Create necessary directories at startup
+os.makedirs("data", exist_ok=True)
+os.makedirs("adapters", exist_ok=True)
+os.makedirs("models/cache", exist_ok=True)
+
+def get_system_specs():
+    """Gather actual hardware configurations of the local node"""
+    import platform
+    import torch
+    import shutil
+
+    # Get CPU
+    cpu_name = platform.processor()
+    if not cpu_name:
+        cpu_name = platform.machine()
+    
+    if platform.system() == "Windows":
+        try:
+            import winreg
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0")
+            cpu_name = winreg.QueryValueEx(key, "ProcessorNameString")[0].strip()
+        except Exception:
+            pass
+
+    # Get GPU
+    gpu_name = "None"
+    gpu_status = "No GPU detected"
+    try:
+        if torch.cuda.is_available():
+            gpu_name = torch.cuda.get_device_name(0)
+            gpu_status = "CUDA Active"
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            gpu_name = "Apple Silicon GPU"
+            gpu_status = "MPS Active"
+        else:
+            gpu_name = "None (CPU fallback active)"
+            gpu_status = "CPU fallback training active"
+    except Exception:
+        pass
+
+    # Get RAM
+    ram_gb = "Unknown"
+    try:
+        import psutil
+        ram_gb = f"{psutil.virtual_memory().total / (1024**3):.2f} GB RAM"
+    except ImportError:
+        # Fallback for Windows
+        if platform.system() == "Windows":
+            try:
+                import subprocess
+                out = subprocess.check_output("wmic ComputerSystem get TotalPhysicalMemory", shell=True).decode()
+                lines = [line.strip() for line in out.splitlines() if line.strip()]
+                if len(lines) > 1:
+                    bytes_ram = int(lines[1])
+                    ram_gb = f"{bytes_ram / (1024**3):.2f} GB RAM"
+            except Exception:
+                pass
+        # Fallback for Linux
+        else:
+            try:
+                import subprocess
+                out = subprocess.check_output("free -b", shell=True).decode()
+                for line in out.splitlines():
+                    if line.startswith("Mem:"):
+                        bytes_ram = int(line.split()[1])
+                        ram_gb = f"{bytes_ram / (1024**3):.2f} GB RAM"
+            except Exception:
+                pass
+    if ram_gb != "Unknown" and "RAM" not in ram_gb:
+        ram_gb = f"{ram_gb} RAM"
+
+    # Get Disk free space
+    disk_free = "Unknown"
+    try:
+        total, used, free = shutil.disk_usage(".")
+        disk_free = f"{free / (1024**3):.2f} GB free space"
+    except Exception:
+        pass
+
+    python_version = platform.python_version()
+
+    return {
+        "cpu": cpu_name,
+        "gpu": f"{gpu_name} ({gpu_status})",
+        "ram": ram_gb,
+        "disk": f"{disk_free} | Python {python_version} (PyTorch Mode)"
+    }
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    specs = get_system_specs()
+    server_address = "127.0.0.1:8080"
+    try:
+        with open("client/config.yaml", "r") as f:
+            config = yaml.safe_load(f)
+            server_address = config.get("federated", {}).get("server_address", "127.0.0.1:8080")
+    except Exception:
+        pass
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request, 
+        "specs": specs,
+        "server_address": server_address
+    })
 
 @app.post("/upload-data")
 async def upload_data(file: UploadFile = File(...)):

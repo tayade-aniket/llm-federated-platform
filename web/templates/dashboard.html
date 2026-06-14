@@ -81,7 +81,7 @@
                     <div class="training-settings">
                         <div class="setting-item">
                             <span>Federated Server:</span>
-                            <span class="value-highlight" id="serverAddr">127.0.0.1:8080</span>
+                            <span class="value-highlight" id="serverAddr">{{ server_address }}</span>
                         </div>
                         <div class="setting-item">
                             <span>Client ID:</span>
@@ -186,19 +186,19 @@
             <div class="specs-grid">
                 <div class="spec-tile">
                     <span class="spec-label">CPU (Central Processing Unit)</span>
-                    <span class="spec-val">Dual-Core Intel Core i3-5005U @ 2.00 GHz (Fully Supported)</span>
+                    <span class="spec-val">{{ specs.cpu }}</span>
                 </div>
                 <div class="spec-tile">
                     <span class="spec-label">GPU (Graphics Processing Unit)</span>
-                    <span class="spec-val">Intel HD Graphics 5500 (CPU fallback training active)</span>
+                    <span class="spec-val">{{ specs.gpu }}</span>
                 </div>
                 <div class="spec-tile">
                     <span class="spec-label">System RAM (Memory)</span>
-                    <span class="spec-val">4.00 GB RAM (Fully Optimized Minimal Mode Active)</span>
+                    <span class="spec-val">{{ specs.ram }}</span>
                 </div>
                 <div class="spec-tile">
                     <span class="spec-label">Disk Storage & Environment</span>
-                    <span class="spec-val">500 MB free space | Python 3.9 - 3.13 (PyTorch Mode Active)</span>
+                    <span class="spec-val">{{ specs.disk }}</span>
                 </div>
             </div>
         </footer>
