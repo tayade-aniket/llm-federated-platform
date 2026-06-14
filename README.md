@@ -412,9 +412,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📧 Contact & Support
 
 - **Documentation**: [Read the Docs](https://your-docs-link.com)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/llm-federated-platform/issues)
-- **Discord**: [Join our community](https://discord.gg/your-invite)
-- **Email**: your.email@example.com
+- **Issues**: [GitHub Issues](https://github.com/tayade-aniket/llm-federated-platform/issues)
+- **Email**: tayadeanni@gmail.com
 
 ## ⭐ Show Your Support
 
@@ -426,16 +425,13 @@ If this project helped you, please give it a ⭐ on GitHub!
   
 **Built with ❤️ for privacy-first AI**
 
-[Report Bug](https://github.com/yourusername/llm-federated-platform/issues) · [Request Feature](https://github.com/yourusername/llm-federated-platform/issues) · [Star on GitHub](https://github.com/yourusername/llm-federated-platform)
+[Report Bug](https://github.com/tayade-aniket/llm-federated-platform/issues) · [Request Feature](https://github.com/tayade-aniket/llm-federated-platform/issues) · [Star on GitHub](https://github.com/tayade-aniket/llm-federated-platform)
 
 </div>
 ```
 
 ## Important Additional Sections to Include
 
-### 🔐 Security Best Practices
-
-```markdown
 ## 🔐 Security Best Practices
 
 ### For Production Deployment
@@ -460,11 +456,7 @@ ENCRYPTION_KEY="your-encryption-key"
 RATE_LIMIT="100/minute"
 LOG_LEVEL="INFO"
 ```
-```
 
-### 🎓 Student Learning Outcomes
-
-```markdown
 ## 🎓 What You'll Learn
 
 After building this project, you'll master:
@@ -493,11 +485,10 @@ After building this project, you'll master:
    - Container orchestration
    - Environment management
    - CI/CD pipelines
-```
+
 
 ### 📊 Sample Dataset Formats
 
-```markdown
 ## 📊 Dataset Formats
 
 ### Supported Formats
