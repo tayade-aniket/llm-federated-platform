@@ -105,7 +105,6 @@ os.makedirs("models/cache", exist_ok=True)
 def get_system_specs():
     """Gather actual hardware configurations of the local node"""
     import platform
-    import torch
     import shutil
 
     # Get CPU
@@ -125,6 +124,7 @@ def get_system_specs():
     gpu_name = "None"
     gpu_status = "No GPU detected"
     try:
+        import torch
         if torch.cuda.is_available():
             gpu_name = torch.cuda.get_device_name(0)
             gpu_status = "CUDA Active"
@@ -134,6 +134,9 @@ def get_system_specs():
         else:
             gpu_name = "None (CPU fallback active)"
             gpu_status = "CPU fallback training active"
+    except ImportError:
+        gpu_name = "Torch not installed"
+        gpu_status = "Inference disabled"
     except Exception:
         pass
 
