@@ -1,4 +1,5 @@
 # Core ML - Minimal memory footprint
+torch>=2.0.0
 transformers>=4.45.0
 peft>=0.12.0
 datasets>=2.21.0
@@ -18,3 +19,4 @@ bitsandbytes>=0.45.0
 pyyaml>=6.0.2
 python-dotenv>=1.0.1
 tqdm>=4.66.5
+psutil>=5.9.0
