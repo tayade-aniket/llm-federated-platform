@@ -423,12 +423,11 @@ If this project helped you, please give it a ⭐ on GitHub!
 
 <div align="center">
   
-**Built with ❤️ for privacy-first AI**
+**Built with 💖 for privacy-first AI**
 
 [Report Bug](https://github.com/tayade-aniket/llm-federated-platform/issues) · [Request Feature](https://github.com/tayade-aniket/llm-federated-platform/issues) · [Star on GitHub](https://github.com/tayade-aniket/llm-federated-platform)
 
 </div>
-```
 
 ## Important Additional Sections to Include
 
