@@ -1,78 +1,86 @@
-# LLM Federated Learning Platform Deployment Guide
+# LLM Federated Learning Platform Free Deployment Guide
 
-This document details the configuration and steps required to build, dockerize, and deploy the On-device LLM Fine-tuning & Federated Learning Platform.
-
----
-
-## 🚀 Deployment Overview
-
-The platform consists of a **hybrid architecture** for cloud deployment:
-1. **Frontend (Vercel)**: Hosted as a fast, static Single Page App (SPA).
-2. **Backend API & Flower Server (Docker container on Render/Railway/AWS)**: Containerized with **Python 3.14.2** to run the FastAPI app and Flower Federated Server.
-3. **Federated Clients**: Run locally on user machines and connect to the cloud Federated Server.
+This guide outlines three paths to deploy both the Web UI and the ML Backend **100% for free**, taking advantage of generous free-tier services.
 
 ---
 
-## ⚡ Vercel Deployment Guide (Frontend UI)
+## ⚡ Step 1: Deploy Frontend on Vercel (Always Free)
 
-Since the frontend is fully client-side and dynamic, we deploy it statically on Vercel. 
+Vercel provides a 100% free Hobby tier for hosting static web interfaces.
 
-### Option A: Deployment via Vercel CLI
-1. Install the Vercel CLI:
+### Quick Deploy:
+1. Install Vercel CLI:
    ```bash
    npm install -g vercel
    ```
-2. Navigate to the project directory and run the deployment command specifying the `web/static` directory as the build target:
+2. Run the deployment command pointing to the static folder:
    ```bash
    vercel web/static --name llm-federated-platform-ui
    ```
-3. Follow the CLI prompts to deploy. Run `vercel --prod` to release to production.
-
-### Option B: Deployment via GitHub integration
-1. Create a new project on the **Vercel Dashboard**.
-2. Connect your Git repository.
-3. In **Project Settings**, configure:
-   - **Root Directory**: `web/static`
-   - **Framework Preset**: `Other` (No build steps required)
-4. Click **Deploy**. Vercel will host the dashboard using the root `index.html` and rewrite `/static/*` requests automatically using `vercel.json`.
+3. Set the project settings to production and deploy:
+   ```bash
+   vercel --prod
+   ```
+*Your frontend is now live at `https://llm-federated-platform-ui.vercel.app`!*
 
 ---
 
-## 🐳 Docker Deployment Guide (Backend & Flower)
+## 🚀 Step 2: Deploy the Backend (Free Hosting Options)
 
-The backend runs the FastAPI server (serving predictions, model state, configurations, and specs) and the Flower coordinator.
+Choose one of the following methods to host your backend server for free:
 
-### 1. Build the Docker Image
-To build the Docker container using Python **3.14.2**:
-```bash
-docker build -t llm-federated-platform .
-```
+### Option A: Local Backend with Free Tunneling (Recommended)
+Since this is an **On-device training platform**, running the backend locally gives you full access to your PC's CPU/GPU and RAM without any cloud costs. You can expose your local server to the Vercel frontend using a free tunneling service.
 
-### 2. Multi-Role Container Execution
-The Docker container can be launched in different modes via CLI arguments:
-
-- **Run Server Only** (Flower coordinator on port 8080):
-  ```bash
-  docker run -d -p 8080:8080 llm-federated-platform python run_platform.py --mode server
-  ```
-- **Run Web Backend Only** (FastAPI app on port 8000):
-  ```bash
-  docker run -d -p 8000:8000 -e FL_SERVER_ADDRESS="<SERVER_IP>:8080" llm-federated-platform python run_platform.py --mode web
-  ```
-- **Run Everything** (Server + Web Backend + Client in parallel):
-  ```bash
-  docker run -d -p 8000:8000 -p 8080:8080 llm-federated-platform
-  ```
+1. **Start the local backend**:
+   ```bash
+   python run_platform.py --mode web
+   ```
+2. **Expose port 8000 using LocalTunnel (Free & No Signup)**:
+   Open a new terminal and run:
+   ```bash
+   npx localtunnel --port 8000
+   ```
+   *Alternatively, you can use `ngrok`: `ngrok http 8000`.*
+3. Copy the generated public URL (e.g. `https://curly-wolves-howl.locallt.ly`).
+4. Paste this URL into the **Backend Server API** setting on your Vercel frontend dashboard.
 
 ---
 
-## 🔗 Connecting Vercel Frontend to Docker Backend
+### Option B: Deploy to Hugging Face Spaces (Free Cloud Hosting - 16GB RAM)
+Hugging Face Spaces offers a **100% free** CPU tier running Docker containers with **16 GB RAM, 2 vCPUs, and 50 GB Disk Space**, which is perfect for PyTorch ML hosting.
 
-1. Deploy the Docker backend to **Render**, **Railway**, or a cloud virtual machine, ensuring port `8000` (FastAPI) and `8080` (Flower) are exposed.
-2. Note your deployed backend API URL (e.g. `https://llm-platform-backend.onrender.com`).
-3. Open your Vercel deployment URL (e.g. `https://llm-federated-platform-ui.vercel.app`).
-4. On the top left of the dashboard, locate the **Backend Server API** panel.
-5. Paste your backend URL into the input field.
-6. The dashboard will verify the connection and show a green **"Connected to backend!"** status indicator.
-7. Under the hood, **CORS Middleware** configured in FastAPI will allow the cross-origin requests from Vercel to function securely.
-8. Local specs, system memory status, training status, and model comparing playground will load and function dynamically from the remote Docker host!
+1. Create a free account on [Hugging Face](https://huggingface.co/).
+2. Create a new **Space**:
+   - **Space SDK**: Select **Docker**
+   - **Docker Template**: Select **Blank**
+   - **Space License**: MIT
+   - **Visibility**: Public (free tier)
+3. Under the hood, HF Spaces requires the container to run on port **7860**. 
+4. Update your local `run_platform.py` or customize the startup port to `7860` for the Web UI mode:
+   - Expose port `7860` in your Dockerfile.
+   - Run command: `python run_platform.py --mode web` (ensure FastAPI/uvicorn runs on port `7860`).
+5. Upload your files (`Dockerfile`, `requirements.txt`, `web/`, `client/`, `utils/`, etc.) directly to the Hugging Face Space repository using Git:
+   ```bash
+   git remote add hf https://huggingface.co/spaces/YOUR_USERNAME/YOUR_SPACE_NAME
+   git push hf main
+   ```
+6. Hugging Face will automatically build your Docker container and host your backend API for free at `https://huggingface.co/spaces/YOUR_USERNAME/YOUR_SPACE_NAME`.
+
+---
+
+### Option C: Deploy to Render (Free Tier - 512MB RAM Limit)
+Render offers free hosting, but with a strict **512 MB RAM limit**. 
+
+> [!WARNING]
+> Because loading PyTorch and ML models in memory exceeds 512 MB, Render will likely trigger an **Out of Memory (OOM) crash** unless you use a micro-sized model (like a 2.5M parameter model) and disable all PyTorch caching.
+
+1. Create a free account on [Render](https://render.com/).
+2. Click **New +** > **Web Service** and connect your GitHub repo.
+3. Configure the settings:
+   - **Runtime**: `Docker`
+   - **Branch**: `main`
+   - **Free Plan**: $0/month (512MB RAM, 0.5 CPU)
+4. Add Environment Variable:
+   - `PORT`: `10000` (Render's default port)
+5. Expose port `10000` in the Web service.

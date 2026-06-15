@@ -2,7 +2,6 @@
   "version": 2,
   "name": "llm-federated-platform-ui",
   "cleanUrls": true,
-  "public": true,
   "framework": null,
   "routes": [
     {
