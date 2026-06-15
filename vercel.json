@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "name": "llm-federated-platform-ui",
+  "cleanUrls": true,
+  "public": true,
+  "framework": null,
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
+}

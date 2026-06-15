@@ -61,12 +61,14 @@ def run_server():
 
 def run_web_ui():
     """Start web interface"""
-    print("\n🌐 Starting Web UI at http://127.0.0.1:8000")
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = os.environ.get("PORT", "8000")
+    print(f"\n🌐 Starting Web UI at http://{host}:{port}")
     subprocess.run([
         sys.executable, "-m", "uvicorn",
         "web.app:app",
-        "--host", "127.0.0.1",
-        "--port", "8000"
+        "--host", host,
+        "--port", port
     ], cwd=str(PROJECT_ROOT))
 
 def run_client_node():

@@ -2,6 +2,13 @@
 let currentSessionId = null;
 let trainingPollInterval = null;
 
+// Helper to construct API URLs dynamically
+function getApiUrl(path) {
+    const base = localStorage.getItem('apiBaseUrl') || '';
+    const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+    return `${cleanBase}${path}`;
+}
+
 // Drag and drop zone setup
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('dataFile');
@@ -10,36 +17,40 @@ const uploadFilename = document.getElementById('uploadFilename');
 const uploadFilesize = document.getElementById('uploadFilesize');
 
 // Handle drag events
-['dragenter', 'dragover'].forEach(eventName => {
-    dropZone.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        dropZone.style.borderColor = 'var(--primary-color)';
-        dropZone.style.background = 'rgba(99, 102, 241, 0.08)';
-    }, false);
-});
+if (dropZone) {
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--primary-color)';
+            dropZone.style.background = 'rgba(99, 102, 241, 0.08)';
+        }, false);
+    });
 
-['dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        dropZone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-        dropZone.style.background = 'rgba(255, 255, 255, 0.02)';
-    }, false);
-});
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+            dropZone.style.background = 'rgba(255, 255, 255, 0.02)';
+        }, false);
+    });
 
-dropZone.addEventListener('drop', (e) => {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-    if (files.length > 0) {
-        fileInput.files = files;
-        handleFileSelection(files[0]);
-    }
-});
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelection(files[0]);
+        }
+    });
+}
 
-fileInput.addEventListener('change', () => {
-    if (fileInput.files.length > 0) {
-        handleFileSelection(fileInput.files[0]);
-    }
-});
+if (fileInput) {
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            handleFileSelection(fileInput.files[0]);
+        }
+    });
+}
 
 function handleFileSelection(file) {
     if (!file.name.endsWith('.json')) {
@@ -69,7 +80,7 @@ async function uploadData() {
     formData.append('file', file);
 
     try {
-        const response = await fetch('/upload-data', {
+        const response = await fetch(getApiUrl('/upload-data'), {
             method: 'POST',
             body: formData
         });
@@ -124,6 +135,7 @@ const logMessages = [
 
 function addLogLine(text, isMuted = false) {
     const consoleLog = document.getElementById('consoleLog');
+    if (!consoleLog) return;
     const logLine = document.createElement('p');
     logLine.className = `log-line ${isMuted ? 'text-muted' : ''}`;
     logLine.textContent = `> ${text}`;
@@ -148,7 +160,7 @@ async function startTraining() {
     addLogLine("Starting fine-tuning process...");
 
     try {
-        const response = await fetch(`/start-training/${currentSessionId}`, {
+        const response = await fetch(getApiUrl(`/start-training/${currentSessionId}`), {
             method: 'POST'
         });
 
@@ -178,7 +190,7 @@ async function startTraining() {
         // Start status polling
         trainingPollInterval = setInterval(async () => {
             try {
-                const statusRes = await fetch(`/training-status/${currentSessionId}`);
+                const statusRes = await fetch(getApiUrl(`/training-status/${currentSessionId}`));
                 if (!statusRes.ok) return;
                 
                 const session = await statusRes.json();
@@ -242,7 +254,7 @@ async function generateResponses() {
     lucide.createIcons();
 
     // Call Baseline Model API
-    const basePromise = fetch('/generate', {
+    const basePromise = fetch(getApiUrl('/generate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `prompt=${encodeURIComponent(prompt)}&use_personalized=false`
@@ -256,7 +268,7 @@ async function generateResponses() {
     });
 
     // Call Personalized Model API
-    const persPromise = fetch('/generate', {
+    const persPromise = fetch(getApiUrl('/generate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `prompt=${encodeURIComponent(prompt)}&use_personalized=true`
@@ -283,17 +295,102 @@ async function generateResponses() {
 // Proactively check if an adapter already exists on mount
 async function checkModelStatus() {
     try {
-        const res = await fetch('/model-status');
+        const res = await fetch(getApiUrl('/model-status'));
         const data = await res.json();
         if (data.loaded) {
             document.getElementById('cacheStatusText').textContent = 'Adapter Cached';
             document.getElementById('cacheStatusText').className = 'stat-val text-accent';
             addLogLine("Detected existing LoRA adapter cached on disk.", true);
+        } else {
+            document.getElementById('cacheStatusText').textContent = 'Standby';
+            document.getElementById('cacheStatusText').className = 'stat-val text-info';
         }
     } catch (e) {
         console.error(e);
     }
 }
 
+// Dynamic Loading of System Specs
+async function loadSpecs() {
+    try {
+        const res = await fetch(getApiUrl('/api/specs'));
+        if (res.ok) {
+            const specs = await res.json();
+            document.getElementById('specCpu').textContent = specs.cpu || 'Unknown';
+            document.getElementById('specGpu').textContent = specs.gpu || 'None';
+            document.getElementById('specRam').textContent = specs.ram || 'Unknown';
+            document.getElementById('specDisk').textContent = specs.disk || 'Unknown';
+        }
+    } catch (e) {
+        console.error("Failed to load specs:", e);
+    }
+}
+
+// Dynamic Loading of Federated Server Address
+async function loadServerAddress() {
+    try {
+        const res = await fetch(getApiUrl('/api/server-address'));
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById('serverAddr').textContent = data.server_address || '127.0.0.1:8080';
+        }
+    } catch (e) {
+        console.error("Failed to load server address:", e);
+    }
+}
+
+// Backend API URL Handlers
+function updateApiBase() {
+    const input = document.getElementById('apiBaseUrl');
+    if (!input) return;
+    let url = input.value.trim();
+    if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'http://' + url;
+    }
+    localStorage.setItem('apiBaseUrl', url);
+    verifyApiConnection();
+}
+
+async function verifyApiConnection() {
+    const statusDiv = document.getElementById('apiConnectionStatus');
+    if (!statusDiv) return;
+    const base = localStorage.getItem('apiBaseUrl') || '';
+    if (!base) {
+        statusDiv.innerHTML = '<span class="text-muted"><i data-lucide="info" style="vertical-align:middle; width:14px; height:14px;"></i> Local relative mode active</span>';
+        lucide.createIcons();
+        loadSpecs();
+        loadServerAddress();
+        checkModelStatus();
+        return;
+    }
+    statusDiv.innerHTML = '<span class="text-warning"><i class="spin-icon" data-lucide="loader" style="vertical-align:middle; width:14px; height:14px;"></i> Connecting...</span>';
+    lucide.createIcons();
+    try {
+        const res = await fetch(getApiUrl('/api/server-address'));
+        if (res.ok) {
+            statusDiv.innerHTML = '<span class="text-success"><i data-lucide="check-circle" style="vertical-align:middle; width:14px; height:14px;"></i> Connected to backend!</span>';
+            loadSpecs();
+            loadServerAddress();
+            checkModelStatus();
+        } else {
+            statusDiv.innerHTML = '<span class="text-warning"><i data-lucide="alert-triangle" style="vertical-align:middle; width:14px; height:14px;"></i> Backend error</span>';
+        }
+    } catch (e) {
+        statusDiv.innerHTML = '<span class="text-warning"><i data-lucide="x-circle" style="vertical-align:middle; width:14px; height:14px;"></i> Connection failed (check URL/CORS)</span>';
+    }
+    lucide.createIcons();
+}
+
+function initApiSettings() {
+    const base = localStorage.getItem('apiBaseUrl') || '';
+    const input = document.getElementById('apiBaseUrl');
+    if (input) {
+        input.value = base;
+    }
+    verifyApiConnection();
+}
+
 // Mount
-checkModelStatus();
+window.addEventListener('DOMContentLoaded', () => {
+    initApiSettings();
+});

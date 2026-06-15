@@ -120,22 +120,20 @@ sequenceDiagram
 ## 🖥️ Web UI Showcase
 
 ### Dashboard View
-![Dashboard](https://via.placeholder.com/800x400?text=Dashboard+-+Training+Overview)
+![Dashboard](assets/1.png)
 *Real-time training dashboard with privacy stats*
 
 ### Data Upload Interface
-![Data Upload](https://via.placeholder.com/800x400?text=Upload+Your+Dataset)
+![Data Upload](assets/2.png)
 *Drag-and-drop JSON/CSV upload with format validation*
 
 ### Training Monitor
-![Training Monitor](https://via.placeholder.com/800x400?text=Training+Progress)
-*Live loss curves, GPU/CPU usage, and estimated completion*
+![Training Monitor](assets/3.png)
+*Live loss curves, GPU/CPU usage, and training logs*
 
 ### Inference Playground
-![Inference](https://via.placeholder.com/800x400?text=Test+Your+Model)
+![Inference](assets/4.png)
 *Interactive chatbot interface for testing fine-tuned models*
-
-> **Note**: Screenshots are placeholders. Run the project to see the actual UI at `http://localhost:8000`
 
 ## 📊 Performance Metrics
 

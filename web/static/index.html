@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federated LLM Fine-Tuning Suite</title>
+    <!-- Google Fonts: Outfit and Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="sidebar-glow"></div>
+    <div class="app-container">
+        <!-- Sidebar / Brand Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <div>
+                    <h1>Antigravity Federated FL</h1>
+                    <span class="badge badge-success">Local Node Active</span>
+                </div>
+            </div>
+            <p class="subtitle">On-device Personalized LLM Fine-tuning Platform. Your data never leaves your RAM.</p>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Column: Operations -->
+            <section class="ops-column">
+                
+                <!-- Backend API Settings (Optional for remote hosts like Vercel) -->
+                <div class="glass-card panel" id="apiSettingsPanel">
+                    <div class="card-header">
+                        <div class="header-icon"><i data-lucide="link"></i></div>
+                        <div>
+                            <h2>Backend Server API</h2>
+                            <p>Set target API endpoint (leave blank for local server)</p>
+                        </div>
+                    </div>
+                    <div class="prompt-box" style="margin-bottom: 0;">
+                        <input type="text" id="apiBaseUrl" placeholder="e.g. https://my-backend.onrender.com" style="width:100%; padding:10px; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:10px; color:white; font-family:var(--font-sans); font-size:13px;" oninput="updateApiBase()">
+                    </div>
+                    <div id="apiConnectionStatus" class="status-msg" style="margin-top:10px; font-size:12px;"></div>
+                </div>
+
+                <!-- Step 1: Upload Data -->
+                <div class="glass-card panel">
+                    <div class="card-header">
+                        <div class="header-icon"><i data-lucide="upload-cloud"></i></div>
+                        <div>
+                            <h2>1. Upload Private Data</h2>
+                            <p>Upload a JSON list of instruction-output pairs</p>
+                        </div>
+                    </div>
+                    
+                    <div class="drop-zone" id="dropZone" onclick="document.getElementById('dataFile').click()">
+                        <input type="file" id="dataFile" accept=".json" style="display: none;">
+                        <i data-lucide="file-json" class="drop-icon"></i>
+                        <p class="drop-text">Click to browse or drag & drop JSON file</p>
+                        <p class="file-spec">Format: [{"instruction": "...", "output": "..."}]</p>
+                    </div>
+                    
+                    <div class="file-details" id="fileDetails" style="display: none;">
+                        <div class="file-info">
+                            <i data-lucide="file-check"></i>
+                            <div>
+                                <span class="filename" id="uploadFilename">dataset.json</span>
+                                <span class="filesize" id="uploadFilesize">0.00 KB</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="uploadData()" id="uploadBtn">
+                            <i data-lucide="check-circle-2"></i> Initialize Session
+                        </button>
+                    </div>
+
+                    <div id="sessionStatus" class="status-msg"></div>
+                </div>
+
+                <!-- Step 2: Fine-tune -->
+                <div class="glass-card panel">
+                    <div class="card-header">
+                        <div class="header-icon"><i data-lucide="cpu"></i></div>
+                        <div>
+                            <h2>2. Local Adapter Training</h2>
+                            <p>Train LoRA adapters locally on your CPU/GPU</p>
+                        </div>
+                    </div>
+                    
+                    <div class="training-settings">
+                        <div class="setting-item">
+                            <span>Federated Server:</span>
+                            <span class="value-highlight" id="serverAddr">Loading...</span>
+                        </div>
+                        <div class="setting-item">
+                            <span>Client ID:</span>
+                            <span class="value-highlight">user_001</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-success btn-block" onclick="startTraining()" id="trainBtn" disabled>
+                        <i data-lucide="play"></i> Start Local Fine-tuning
+                    </button>
+                    
+                    <!-- Progress Section -->
+                    <div class="progress-section" id="progressSection" style="display: none;">
+                        <div class="progress-meta">
+                            <span id="trainingStateText"><i data-lucide="loader" class="spin-icon"></i> Training...</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="console-log" id="consoleLog">
+                            <p class="log-line text-muted">> Waiting for training initialization...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Status & Evaluation -->
+            <section class="eval-column">
+                
+                <!-- Privacy Stats Widget -->
+                <div class="glass-card privacy-stats">
+                    <h3><i data-lucide="lock" style="vertical-align: middle; margin-right: 8px;"></i> Privacy & Security Shield</h3>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <span class="stat-label">Data Sent to Cloud</span>
+                            <span class="stat-val text-success">0 Bytes</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Encryption Level</span>
+                            <span class="stat-val">TLS v1.3</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Differential Privacy</span>
+                            <span class="stat-val text-warning">Local DP Enabled</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Model Cache Status</span>
+                            <span class="stat-val text-info" id="cacheStatusText">Standby</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Playground / Testing -->
+                <div class="glass-card panel playground">
+                    <div class="card-header">
+                        <div class="header-icon"><i data-lucide="message-square-code"></i></div>
+                        <div>
+                            <h2>3. Model Playground</h2>
+                            <p>Test the baseline vs personalized model side-by-side</p>
+                        </div>
+                    </div>
+
+                    <div class="prompt-box">
+                        <label for="prompt">Prompt Instruction</label>
+                        <textarea id="prompt" placeholder="Ask something you trained the model on, e.g. 'Explain what is machine learning'"></textarea>
+                    </div>
+
+                    <button class="btn btn-accent" onclick="generateResponses()" id="generateBtn">
+                        <i data-lucide="sparkles"></i> Compare Responses
+                    </button>
+
+                    <!-- Split response panels -->
+                    <div class="split-output">
+                        <div class="output-panel">
+                            <div class="output-header">
+                                <span class="model-badge base-badge">Baseline Model</span>
+                            </div>
+                            <div class="output-content" id="baseResponse">
+                                <span class="placeholder-text">Run prompt comparison to view baseline output...</span>
+                            </div>
+                        </div>
+                        <div class="output-panel">
+                            <div class="output-header">
+                                <span class="model-badge pers-badge">Personalized LoRA Model</span>
+                            </div>
+                            <div class="output-content" id="personalizedResponse">
+                                <span class="placeholder-text">Run prompt comparison to view fine-tuned output...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- System Requirements Footer -->
+        <footer class="app-footer-specs">
+            <div class="specs-header">
+                <i data-lucide="info"></i>
+                <h3>Minimum System Requirements & Target Hardware Configuration</h3>
+            </div>
+            <div class="specs-grid">
+                <div class="spec-tile">
+                    <span class="spec-label">CPU (Central Processing Unit)</span>
+                    <span class="spec-val" id="specCpu">Loading...</span>
+                </div>
+                <div class="spec-tile">
+                    <span class="spec-label">GPU (Graphics Processing Unit)</span>
+                    <span class="spec-val" id="specGpu">Loading...</span>
+                </div>
+                <div class="spec-tile">
+                    <span class="spec-label">System RAM (Memory)</span>
+                    <span class="spec-val" id="specRam">Loading...</span>
+                </div>
+                <div class="spec-tile">
+                    <span class="spec-label">Disk Storage & Environment</span>
+                    <span class="spec-val" id="specDisk">Loading...</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Init icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="/static/script.js"></script>
+</body>
+</html>

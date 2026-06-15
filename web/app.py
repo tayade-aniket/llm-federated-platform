@@ -12,7 +12,17 @@ import uuid
 import yaml
 from pathlib import Path
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(title="On-device LLM Fine-tuning Platform")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Setup templates and static files (search templates inside web/templates)
 templates = Jinja2Templates(directory="web/templates")
@@ -36,12 +46,24 @@ def get_model_and_tokenizer(use_personalized: bool):
     from peft import PeftModel
     
     # Read config
-    with open("client/config.yaml", "r") as f:
-        config = yaml.safe_load(f)
-    
-    model_name = config["model"]["name"]
+    config = {}
+    if os.path.exists("client/config.yaml"):
+        with open("client/config.yaml", "r") as f:
+            config = yaml.safe_load(f)
+    if "model" not in config:
+        config["model"] = {}
+    model_name = os.environ.get("FL_MODEL_NAME") or config.get("model", {}).get("name", "sshleifer/tiny-gpt2")
     device = "cuda" if torch.cuda.is_available() else "cpu"
     adapter_path = "adapters/latest"
+    latest_ref_path = "adapters/latest_path.txt"
+    if os.path.exists(latest_ref_path):
+        try:
+            with open(latest_ref_path, "r", encoding="utf-8") as f:
+                ref_path = f.read().strip()
+                if os.path.exists(ref_path):
+                    adapter_path = ref_path
+        except Exception:
+            pass
     adapter_exists = os.path.exists(adapter_path)
     
     # Determine if we should load the personalized adapter
@@ -191,18 +213,42 @@ def get_system_specs():
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     specs = get_system_specs()
-    server_address = "127.0.0.1:8080"
-    try:
-        with open("client/config.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            server_address = config.get("federated", {}).get("server_address", "127.0.0.1:8080")
-    except Exception:
-        pass
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request, 
-        "specs": specs,
-        "server_address": server_address
-    })
+    server_address = os.environ.get("FL_SERVER_ADDRESS") or "127.0.0.1:8080"
+    if not os.environ.get("FL_SERVER_ADDRESS"):
+        try:
+            with open("client/config.yaml", "r") as f:
+                config = yaml.safe_load(f)
+                server_address = config.get("federated", {}).get("server_address", "127.0.0.1:8080")
+        except Exception:
+            pass
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={
+            "request": request,
+            "specs": specs,
+            "server_address": server_address
+        }
+    )
+
+@app.get("/api/specs")
+async def api_specs():
+    """Endpoint to fetch local node hardware specifications dynamically"""
+    return get_system_specs()
+
+@app.get("/api/server-address")
+async def api_server_address():
+    """Endpoint to fetch federated server address config dynamically"""
+    server_address = os.environ.get("FL_SERVER_ADDRESS") or "127.0.0.1:8080"
+    if not os.environ.get("FL_SERVER_ADDRESS"):
+        try:
+            with open("client/config.yaml", "r") as f:
+                config = yaml.safe_load(f)
+                server_address = config.get("federated", {}).get("server_address", "127.0.0.1:8080")
+        except Exception:
+            pass
+    return {"server_address": server_address}
+
 
 @app.post("/upload-data")
 async def upload_data(file: UploadFile = File(...)):
@@ -259,6 +305,15 @@ async def get_training_status(session_id: str):
 async def model_status():
     """Check if personal model is loaded"""
     adapter_path = "adapters/latest"
+    latest_ref_path = "adapters/latest_path.txt"
+    if os.path.exists(latest_ref_path):
+        try:
+            with open(latest_ref_path, "r", encoding="utf-8") as f:
+                ref_path = f.read().strip()
+                if os.path.exists(ref_path):
+                    adapter_path = ref_path
+        except Exception:
+            pass
     if os.path.exists(adapter_path):
         return {"loaded": True, "path": adapter_path}
     return {"loaded": False}

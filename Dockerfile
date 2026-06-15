@@ -27,8 +27,8 @@ COPY . .
 RUN mkdir -p data adapters models/cache && \
     chmod -R 777 data adapters models
 
-# Expose port (Render/Railway binds to this automatically)
-EXPOSE 8000
+# Expose ports for Web UI (8000) and Flower Federated Server (8080)
+EXPOSE 8000 8080
 
-# Start FastAPI application
-CMD ["uvicorn", "web.app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start the platform orchestration script by default (can be overridden)
+CMD ["python", "run_platform.py", "--mode", "all"]

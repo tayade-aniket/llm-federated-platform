@@ -35,6 +35,21 @@
             <!-- Left Column: Operations -->
             <section class="ops-column">
                 
+                <!-- Backend API Settings (Optional for remote hosts like Vercel) -->
+                <div class="glass-card panel" id="apiSettingsPanel">
+                    <div class="card-header">
+                        <div class="header-icon"><i data-lucide="link"></i></div>
+                        <div>
+                            <h2>Backend Server API</h2>
+                            <p>Set target API endpoint (leave blank for local server)</p>
+                        </div>
+                    </div>
+                    <div class="prompt-box" style="margin-bottom: 0;">
+                        <input type="text" id="apiBaseUrl" placeholder="e.g. https://my-backend.onrender.com" style="width:100%; padding:10px; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:10px; color:white; font-family:var(--font-sans); font-size:13px;" oninput="updateApiBase()">
+                    </div>
+                    <div id="apiConnectionStatus" class="status-msg" style="margin-top:10px; font-size:12px;"></div>
+                </div>
+
                 <!-- Step 1: Upload Data -->
                 <div class="glass-card panel">
                     <div class="card-header">
@@ -81,7 +96,7 @@
                     <div class="training-settings">
                         <div class="setting-item">
                             <span>Federated Server:</span>
-                            <span class="value-highlight" id="serverAddr">{{ server_address }}</span>
+                            <span class="value-highlight" id="serverAddr">Loading...</span>
                         </div>
                         <div class="setting-item">
                             <span>Client ID:</span>
@@ -186,19 +201,19 @@
             <div class="specs-grid">
                 <div class="spec-tile">
                     <span class="spec-label">CPU (Central Processing Unit)</span>
-                    <span class="spec-val">{{ specs.cpu }}</span>
+                    <span class="spec-val" id="specCpu">Loading...</span>
                 </div>
                 <div class="spec-tile">
                     <span class="spec-label">GPU (Graphics Processing Unit)</span>
-                    <span class="spec-val">{{ specs.gpu }}</span>
+                    <span class="spec-val" id="specGpu">Loading...</span>
                 </div>
                 <div class="spec-tile">
                     <span class="spec-label">System RAM (Memory)</span>
-                    <span class="spec-val">{{ specs.ram }}</span>
+                    <span class="spec-val" id="specRam">Loading...</span>
                 </div>
                 <div class="spec-tile">
                     <span class="spec-label">Disk Storage & Environment</span>
-                    <span class="spec-val">{{ specs.disk }}</span>
+                    <span class="spec-val" id="specDisk">Loading...</span>
                 </div>
             </div>
         </footer>

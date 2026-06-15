@@ -134,6 +134,14 @@ class PersonalizedFedAvg(FedAvg):
             np.zeros_like(weights) for weights in weights_results[0][0]
         ]
         
+        if total_weight == 0:
+            # Fall back to uniform average if total_weight is zero
+            num_clients = len(weights_results)
+            for client_weights, _ in weights_results:
+                for i, layer_weights in enumerate(client_weights):
+                    aggregated_weights[i] += (layer_weights / num_clients)
+            return aggregated_weights
+            
         # Weighted sum
         for client_weights, num_examples in weights_results:
             for i, layer_weights in enumerate(client_weights):
@@ -185,30 +193,95 @@ class FederatedServer:
         
     def _load_config(self, config_path: str) -> dict:
         """Load server configuration"""
+        config = {}
         if Path(config_path).exists():
             with open(config_path, 'r') as f:
-                return yaml.safe_load(f)
-        else:
-            # Default configuration
-            return {
-                'server': {
-                    'host': '0.0.0.0',
-                    'port': 8080,
-                    'num_rounds': 5,
-                    'min_fit_clients': 1,
-                    'min_available_clients': 1
-                },
-                'aggregation': {
-                    'strategy': 'fedavg',
-                    'fraction_fit': 1.0,
-                    'server_learning_rate': 1.0
-                },
-                'privacy': {
-                    'differential_privacy': False,
-                    'clip_norm': 1.0,
-                    'noise_multiplier': 1.0
-                }
-            }
+                config = yaml.safe_load(f)
+        
+        # Ensure default structure is present
+        if 'server' not in config:
+            config['server'] = {}
+        if 'aggregation' not in config:
+            config['aggregation'] = {}
+        if 'privacy' not in config:
+            config['privacy'] = {}
+
+        # Set default values if not present
+        config['server'].setdefault('host', '0.0.0.0')
+        config['server'].setdefault('port', 8080)
+        config['server'].setdefault('num_rounds', 5)
+        config['server'].setdefault('min_fit_clients', 1)
+        config['server'].setdefault('min_available_clients', 1)
+        config['server'].setdefault('min_evaluate_clients', 1)
+        config['server'].setdefault('fraction_evaluate', 0.0) # Default to 0.0 to disable client evaluation
+        
+        config['aggregation'].setdefault('strategy', 'fedavg')
+        config['aggregation'].setdefault('fraction_fit', 1.0)
+        config['aggregation'].setdefault('server_learning_rate', 1.0)
+        
+        config['privacy'].setdefault('differential_privacy', False)
+        config['privacy'].setdefault('clip_norm', 1.0)
+        config['privacy'].setdefault('noise_multiplier', 1.0)
+
+        # Environment variable overrides
+        env_host = os.environ.get("FL_SERVER_HOST") or os.environ.get("HOST")
+        if env_host:
+            config['server']['host'] = env_host
+            
+        env_port = os.environ.get("FL_SERVER_PORT") or os.environ.get("PORT")
+        if env_port:
+            try:
+                config['server']['port'] = int(env_port)
+            except ValueError:
+                pass
+                
+        env_rounds = os.environ.get("FL_NUM_ROUNDS")
+        if env_rounds:
+            try:
+                config['server']['num_rounds'] = int(env_rounds)
+            except ValueError:
+                pass
+                
+        env_min_fit = os.environ.get("FL_MIN_FIT_CLIENTS")
+        if env_min_fit:
+            try:
+                config['server']['min_fit_clients'] = int(env_min_fit)
+            except ValueError:
+                pass
+                
+        env_min_avail = os.environ.get("FL_MIN_AVAILABLE_CLIENTS")
+        if env_min_avail:
+            try:
+                config['server']['min_available_clients'] = int(env_min_avail)
+            except ValueError:
+                pass
+
+        env_min_eval = os.environ.get("FL_MIN_EVALUATE_CLIENTS")
+        if env_min_eval:
+            try:
+                config['server']['min_evaluate_clients'] = int(env_min_eval)
+            except ValueError:
+                pass
+                
+        env_frac_eval = os.environ.get("FL_FRACTION_EVALUATE")
+        if env_frac_eval:
+            try:
+                config['server']['fraction_evaluate'] = float(env_frac_eval)
+            except ValueError:
+                pass
+
+        # Enforce strict types to prevent configuration parsing type errors
+        try:
+            config['server']['port'] = int(config['server']['port'])
+            config['server']['num_rounds'] = int(config['server']['num_rounds'])
+            config['server']['min_fit_clients'] = int(config['server']['min_fit_clients'])
+            config['server']['min_available_clients'] = int(config['server']['min_available_clients'])
+            config['server']['min_evaluate_clients'] = int(config['server']['min_evaluate_clients'])
+            config['server']['fraction_evaluate'] = float(config['server']['fraction_evaluate'])
+        except Exception:
+            pass
+
+        return config
     
     def _create_strategy(self, initial_parameters: Optional[Parameters] = None):
         """Create federated learning strategy"""
@@ -217,7 +290,9 @@ class FederatedServer:
         if strategy_config['strategy'].lower() == 'fedavg':
             strategy = PersonalizedFedAvg(
                 fraction_fit=strategy_config.get('fraction_fit', 1.0),
+                fraction_evaluate=self.config['server'].get('fraction_evaluate', 0.0),
                 min_fit_clients=self.config['server']['min_fit_clients'],
+                min_evaluate_clients=self.config['server']['min_evaluate_clients'],
                 min_available_clients=self.config['server']['min_available_clients'],
                 server_learning_rate=strategy_config.get('server_learning_rate', 1.0),
                 initial_parameters=initial_parameters
@@ -225,14 +300,18 @@ class FederatedServer:
         elif strategy_config['strategy'].lower() == 'fedadam':
             strategy = FedAdam(
                 fraction_fit=strategy_config.get('fraction_fit', 1.0),
+                fraction_evaluate=self.config['server'].get('fraction_evaluate', 0.0),
                 min_fit_clients=self.config['server']['min_fit_clients'],
+                min_evaluate_clients=self.config['server']['min_evaluate_clients'],
                 min_available_clients=self.config['server']['min_available_clients'],
                 initial_parameters=initial_parameters
             )
         else:
             strategy = PersonalizedFedAvg(
                 fraction_fit=strategy_config.get('fraction_fit', 1.0),
+                fraction_evaluate=self.config['server'].get('fraction_evaluate', 0.0),
                 min_fit_clients=self.config['server']['min_fit_clients'],
+                min_evaluate_clients=self.config['server']['min_evaluate_clients'],
                 min_available_clients=self.config['server']['min_available_clients'],
                 initial_parameters=initial_parameters
             )

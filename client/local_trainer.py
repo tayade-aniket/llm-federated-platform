@@ -24,8 +24,57 @@ import shutil
 class LocalTrainer:
     def __init__(self, config_path="client/config.yaml"):
         import yaml
-        with open(config_path, 'r') as f:
-            self.config = yaml.safe_load(f)
+        self.config = {}
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                self.config = yaml.safe_load(f)
+                
+        # Ensure default dictionary structures exist
+        if 'model' not in self.config:
+            self.config['model'] = {}
+        if 'training' not in self.config:
+            self.config['training'] = {}
+        if 'federated' not in self.config:
+            self.config['federated'] = {}
+            
+        self.config['model'].setdefault('name', 'sshleifer/tiny-gpt2')
+        self.config['model'].setdefault('use_quantization', False)
+        self.config['model'].setdefault('load_in_4bit', False)
+        self.config['training'].setdefault('lora_r', 4)
+        self.config['training'].setdefault('lora_alpha', 8)
+        self.config['training'].setdefault('target_modules', ["c_attn"])
+        self.config['training'].setdefault('lora_dropout', 0.1)
+        self.config['training'].setdefault('batch_size', 1)
+        self.config['training'].setdefault('learning_rate', 1e-3)
+        self.config['training'].setdefault('num_epochs', 1)
+        self.config['training'].setdefault('max_seq_length', 32)
+        self.config['federated'].setdefault('server_address', '127.0.0.1:8080')
+        self.config['federated'].setdefault('client_id', 'user_001')
+        
+        # Override with environment variables
+        env_server_addr = os.environ.get("FL_SERVER_ADDRESS")
+        if env_server_addr:
+            self.config['federated']['server_address'] = env_server_addr
+            
+        env_client_id = os.environ.get("FL_CLIENT_ID")
+        if env_client_id:
+            self.config['federated']['client_id'] = env_client_id
+            
+        env_model_name = os.environ.get("FL_MODEL_NAME")
+        if env_model_name:
+            self.config['model']['name'] = env_model_name
+            
+        # Enforce strict types to prevent TypeError: can't multiply sequence by non-int of type 'float'
+        self.config['training']['lora_r'] = int(self.config['training']['lora_r'])
+        self.config['training']['lora_alpha'] = int(self.config['training']['lora_alpha'])
+        self.config['training']['lora_dropout'] = float(self.config['training']['lora_dropout'])
+        self.config['training']['batch_size'] = int(self.config['training']['batch_size'])
+        self.config['training']['learning_rate'] = float(self.config['training']['learning_rate'])
+        self.config['training']['num_epochs'] = int(self.config['training']['num_epochs'])
+        self.config['training']['max_seq_length'] = int(self.config['training']['max_seq_length'])
+        if isinstance(self.config['training']['target_modules'], str):
+            self.config['training']['target_modules'] = [self.config['training']['target_modules']]
+
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {self.device}")
@@ -130,7 +179,7 @@ class LocalTrainer:
             remove_unused_columns=True,
             use_cpu=(self.device.type == "cpu"),
             report_to="none",
-            optim="adafactor"
+            optim="adamw_torch"
         )
         
         from transformers import DataCollatorForLanguageModeling
@@ -146,24 +195,30 @@ class LocalTrainer:
         trainer.train()
         
         # Save LoRA adapters
+        import time
         client_id = self.config['federated']['client_id']
-        adapter_path = f"./adapters/{client_id}"
+        timestamp = int(time.time())
+        adapter_path = f"./adapters/{client_id}_{timestamp}"
         self.model.save_pretrained(adapter_path)
         self.tokenizer.save_pretrained(adapter_path)
         
-        # Make a copy as adapters/latest
-        latest_path = "./adapters/latest"
-        if os.path.exists(latest_path):
-            try:
-                shutil.rmtree(latest_path)
-            except Exception:
-                try:
-                    os.unlink(latest_path)
-                except Exception:
-                    pass
-        
-        shutil.copytree(adapter_path, latest_path, dirs_exist_ok=True)
-        print(f"✅ Training complete. Adapters saved to {adapter_path} and {latest_path}")
+        # Save pointer to latest adapter path to avoid Windows file lock issues
+        latest_ref_path = "./adapters/latest_path.txt"
+        try:
+            with open(latest_ref_path, "w", encoding="utf-8") as f:
+                f.write(adapter_path)
+        except Exception as e:
+            print(f"⚠️ Warning: Could not write latest adapter pointer: {e}")
+
+        # Try to also update client_id fallback (catches locking errors on Windows gracefully)
+        fallback_path = f"./adapters/{client_id}"
+        try:
+            self.model.save_pretrained(fallback_path)
+            self.tokenizer.save_pretrained(fallback_path)
+        except Exception:
+            pass
+            
+        print(f"✅ Training complete. Adapters saved to {adapter_path}")
         return adapter_path
     
     def get_model_weights_list(self):
