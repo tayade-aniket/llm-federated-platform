@@ -12,5 +12,11 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://t-anni-llm-federated-backend.hf.space/:path*"
+    }
   ]
 }
