@@ -89,7 +89,9 @@ docker-compose.override.yml
 *.backup
 *.old
 
-# OS files
-Thumbs.db
+# Thumbs.db
 desktop.ini
 .DS_Store
+
+# UI Screenshots
+assets/
